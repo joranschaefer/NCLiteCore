@@ -4917,17 +4917,17 @@ bool Player::isBeingLoaded() const
 
 bool Player::LoadFromDB(ObjectGuid playerGuid, CharacterDatabaseQueryHolder const& holder)
 {
-    ////                                                     0     1        2     3     4        5      6    7      8     9    10    11         12         13           14         15         16
-    //QueryResult* result = CharacterDatabase.Query("SELECT guid, account, name, race, class, gender, level, xp, money, skin, face, hairStyle, hairColor, facialStyle, bankSlots, restState, playerFlags, "
-    // 17          18          19          20   21           22        23        24         25         26          27           28                 29
+    ////                                                    0     1        2     3     4      5       6      7   8           9               10     11    12    13         14         15           16         17         18
+    //QueryResult* result = CharacterDatabase.Query("SELECT guid, account, name, race, class, gender, level, xp, battleRank, progressPoints, money, skin, face, hairStyle, hairColor, facialStyle, bankSlots, restState, playerFlags, "
+    // 19          20          21          22   23           24        25        26         27         28          29           30                 31
     //"position_x, position_y, position_z, map, orientation, taximask, cinematic, totaltime, leveltime, rest_bonus, logout_time, is_logout_resting, resettalents_cost, "
-    // 30                 31       32       33       34       35         36           37             38        39    40      41                 42         43
+    // 31                 32       33       34       35       36         37           38             39        40    41      42                 43         44
     //"resettalents_time, trans_x, trans_y, trans_z, trans_o, transguid, extra_flags, stable_slots, at_login, zone, online, death_expire_time, taxi_path, instance_mode_mask, "
-    // 44           45                46                 47                    48          49          50              51           52               53              54
+    // 46           47                48                 49                    50          51          52              53           54               55              56
     //"arenaPoints, totalHonorPoints, todayHonorPoints, yesterdayHonorPoints, totalKills, todayKills, yesterdayKills, chosenTitle, knownCurrencies, watchedFaction, drunk, "
-    // 55      56      57      58      59      60      61      62      63           64                 65                 66             67              68      69
+    // 57      58      59      60      61      62      63      64      65           66                 67                 68             69              70      71
     //"health, power1, power2, power3, power4, power5, power6, power7, instance_id, talentGroupsCount, activeTalentGroup, exploredZones, equipmentCache, ammoId, knownTitles,
-    // 70          71               72            73                     74
+    // 72          73               74            75                     76
     //"actionBars, grantableLevels, innTriggerId, extraBonusTalentCount, UNIX_TIMESTAMP(creation_date) FROM characters WHERE guid = '{}'", guid);
     PreparedQueryResult result = holder.GetPreparedResult(PLAYER_LOGIN_QUERY_LOAD_FROM);
 
@@ -4989,7 +4989,7 @@ bool Player::LoadFromDB(ObjectGuid playerGuid, CharacterDatabaseQueryHolder cons
     m_race = fields[3].Get<uint8>(); // set real race
 
     SetUInt32Value(UNIT_FIELD_LEVEL, fields[6].Get<uint8>());
-    SetUInt32Value(PLAYER_XP, fields[7].Get<uint32>());
+    m_xp = fields[7].GetUInt32();
 
     if (!_LoadIntoDataField(fields[66].Get<std::string>(), PLAYER_EXPLORED_ZONES_1, PLAYER_EXPLORED_ZONES_SIZE))
     {
@@ -5033,6 +5033,13 @@ bool Player::LoadFromDB(ObjectGuid playerGuid, CharacterDatabaseQueryHolder cons
 
     // set which actionbars the client has active - DO NOT REMOVE EVER AGAIN (can be changed though, if it does change fieldwise)
     SetByteValue(PLAYER_FIELD_BYTES, 2, fields[70].Get<uint8>());
+
+    // NC Custom
+    m_battleRank = fields[73].GetUInt8();
+    m_progressPoints = fields[74].GetUInt32();
+    SetUInt32Value(PLAYER_XP, m_progressPoints);
+    m_progressPointCap = ProgressPointCaps[m_battleRank];
+    SetUInt32Value(PLAYER_NEXT_LEVEL_XP, m_progressPointCap);
 
     InitDisplayIds();
 
@@ -5402,7 +5409,7 @@ bool Player::LoadFromDB(ObjectGuid playerGuid, CharacterDatabaseQueryHolder cons
                        : bubble0 * sWorld->getRate(RATE_REST_OFFLINE_IN_WILDERNESS);
 
         // Client automatically doubles the value sent so we have to divide it by 2
-        SetRestBonus(GetRestBonus() + time_diff * ((float)GetUInt32Value(PLAYER_NEXT_LEVEL_XP) / 144000)*bubble);
+        SetRestBonus(GetRestBonus() + time_diff*((float)m_xpCap / 144000)*bubble);
     }
 
     uint32 innTriggerId = fields[72].Get<uint32>();

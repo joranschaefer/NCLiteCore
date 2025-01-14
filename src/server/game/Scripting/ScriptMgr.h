@@ -206,6 +206,8 @@ public: /* ItemScript */
     bool OnCastItemCombatSpell(Player* player, Unit* victim, SpellInfo const* spellInfo, Item* item);
     void OnGossipSelect(Player* player, Item* item, uint32 sender, uint32 action);
     void OnGossipSelectCode(Player* player, Item* item, uint32 sender, uint32 action, const char* code);
+    bool OnItemBuy(Player* player, uint32 item);
+    bool OnItemSell(Player* player, uint32 item);
 
 public: /* CreatureScript */
     bool OnGossipHello(Player* player, Creature* creature);
@@ -305,6 +307,7 @@ public: /* PlayerScript */
     void OnCreatureKilledByPet(Player* petOwner, Creature* killed);
     void OnPlayerKilledByCreature(Creature* killer, Player* killed);
     void OnPlayerLevelChanged(Player* player, uint8 oldLevel);
+    void OnPlayerBattleRankChanged(Player* player, uint8 oldRank);
     void OnPlayerFreeTalentPointsChanged(Player* player, uint32 newPoints);
     void OnPlayerTalentsReset(Player* player, bool noCost);
     void OnAfterSpecSlotChanged(Player* player, uint8 newSlot);

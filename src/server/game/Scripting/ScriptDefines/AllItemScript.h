@@ -38,6 +38,12 @@ public:
     // Called when the item expires (is destroyed).
     [[nodiscard]] virtual bool CanItemExpire(Player* /*player*/, ItemTemplate const* /*proto*/) { return true; }
 
+    // Called when a player buys an item from a vendor.
+    [[nodiscard]] virtual bool OnItemBuy(Player* player, uint32 item) { return true; }
+
+    // Called when a player sells an item to a vendor.
+    [[nodiscard]] virtual bool OnItemSell(Player* player, uint32 item) { return true; }
+
     // Called when a player selects an option in an item gossip window
     virtual void OnItemGossipSelect(Player* /*player*/, Item* /*item*/, uint32 /*sender*/, uint32 /*action*/) { }
 

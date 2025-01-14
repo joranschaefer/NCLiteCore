@@ -99,6 +99,20 @@ bool ScriptMgr::OnItemRemove(Player* player, Item* item)
     return tempScript ? tempScript->OnRemove(player, item) : false;
 }
 
+bool ScriptMgr::OnItemBuy(Player* player, uint32 itemId)
+{
+	ASSERT(player);
+	ASSERT(itemId);
+	return true;
+}
+
+bool ScriptMgr::OnItemSell(Player* player, uint32 itemId)
+{
+	ASSERT(player);
+	ASSERT(itemId);
+	return true;
+}
+
 bool ScriptMgr::OnCastItemCombatSpell(Player* player, Unit* victim, SpellInfo const* spellInfo, Item* item)
 {
     ASSERT(player);

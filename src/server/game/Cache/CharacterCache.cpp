@@ -86,6 +86,19 @@ void CharacterCache::LoadCharacterCacheStorage()
         } while (mailCountResult->NextRow());
     }
 
+    QueryResult ppResult = WorldDatabase.Query("SELECT `pp_for_next_rank` FROM `player_pp_for_rank` ORDER BY `rank` ASC");
+    if (!ppResult)
+    {
+        LOG_INFO("server.loading", "Failed to load Progress Point Caps");
+        return;
+    }
+
+    do
+    {
+        Field* fields = ppResult->Fetch();
+        Player::ProgressPointCaps.push_back(fields[0].GetUInt32());
+    } while (ppResult->NextRow());
+
     LOG_INFO("server.loading", ">> Loaded Character Infos For {} Characters in {} ms", _characterCacheStore.size(), GetMSTimeDiffToNow(oldMSTime));
     LOG_INFO("server.loading", " ");
 }
