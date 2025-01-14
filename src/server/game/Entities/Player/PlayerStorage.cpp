@@ -4989,7 +4989,7 @@ bool Player::LoadFromDB(ObjectGuid playerGuid, CharacterDatabaseQueryHolder cons
     m_race = fields[3].Get<uint8>(); // set real race
 
     SetUInt32Value(UNIT_FIELD_LEVEL, fields[6].Get<uint8>());
-    m_xp = fields[7].GetUInt32();
+    m_xp = fields[7].Get<uint32>();
 
     if (!_LoadIntoDataField(fields[66].Get<std::string>(), PLAYER_EXPLORED_ZONES_1, PLAYER_EXPLORED_ZONES_SIZE))
     {
@@ -5035,8 +5035,8 @@ bool Player::LoadFromDB(ObjectGuid playerGuid, CharacterDatabaseQueryHolder cons
     SetByteValue(PLAYER_FIELD_BYTES, 2, fields[70].Get<uint8>());
 
     // NC Custom
-    m_battleRank = fields[73].GetUInt8();
-    m_progressPoints = fields[74].GetUInt32();
+    m_battleRank = fields[73].Get<uint8>();
+    m_progressPoints = fields[74].Get<uint32>();
     SetUInt32Value(PLAYER_XP, m_progressPoints);
     m_progressPointCap = ProgressPointCaps[m_battleRank];
     SetUInt32Value(PLAYER_NEXT_LEVEL_XP, m_progressPointCap);

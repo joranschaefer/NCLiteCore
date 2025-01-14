@@ -2619,7 +2619,7 @@ void Player::InitStatsForLevel(bool reapplyMods)
     {
         SetUInt32Value(PLAYER_FIELD_MAX_LEVEL, 61);
     }
-    m_xpCap = sObjectMgr->GetXPForLevel(getLevel());
+    m_xpCap = sObjectMgr->GetXPForLevel(GetLevel());
 
     // reset before any aura state sources (health set/aura apply)
     SetUInt32Value(UNIT_FIELD_AURASTATE, 0);

@@ -96,7 +96,7 @@ void CharacterCache::LoadCharacterCacheStorage()
     do
     {
         Field* fields = ppResult->Fetch();
-        Player::ProgressPointCaps.push_back(fields[0].GetUInt32());
+        Player::ProgressPointCaps.push_back(fields[0].Get<uint32>());
     } while (ppResult->NextRow());
 
     LOG_INFO("server.loading", ">> Loaded Character Infos For {} Characters in {} ms", _characterCacheStore.size(), GetMSTimeDiffToNow(oldMSTime));
