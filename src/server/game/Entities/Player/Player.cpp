@@ -14747,6 +14747,8 @@ void Player::_SaveCharacter(bool create, CharacterDatabaseTransaction trans)
         stmt->SetData(index++, GetByteValue(PLAYER_BYTES_3, 0));   // save gender from PLAYER_BYTES_3, UNIT_BYTES_0 changes with every transform effect
         stmt->SetData(index++, GetLevel());
         stmt->SetData(index++, m_xp);
+        stmt->SetData(index++, m_battleRank);
+        stmt->SetData(index++, m_progressPoints);
         stmt->SetData(index++, GetMoney());
         stmt->SetData(index++, GetByteValue(PLAYER_BYTES, 0));
         stmt->SetData(index++, GetByteValue(PLAYER_BYTES, 1));
@@ -14854,10 +14856,6 @@ void Player::_SaveCharacter(bool create, CharacterDatabaseTransaction trans)
         stmt->SetData(index++, m_grantableLevels);
         stmt->SetData(index++, _innTriggerId);
         stmt->SetData(index++, m_extraBonusTalentCount);
-
-        // Battle Rank System
-        stmt->SetData(index++, m_battleRank);
-		stmt->SetData(index++, m_progressPoints);
     }
     else
     {
@@ -14869,6 +14867,8 @@ void Player::_SaveCharacter(bool create, CharacterDatabaseTransaction trans)
         stmt->SetData(index++, GetByteValue(PLAYER_BYTES_3, 0));   // save gender from PLAYER_BYTES_3, UNIT_BYTES_0 changes with every transform effect
         stmt->SetData(index++, GetLevel());
         stmt->SetData(index++, m_xp);
+        stmt->SetData(index++, m_battleRank);
+        stmt->SetData(index++, m_progressPoints);
         stmt->SetData(index++, GetMoney());
         stmt->SetData(index++, GetByteValue(PLAYER_BYTES, 0));
         stmt->SetData(index++, GetByteValue(PLAYER_BYTES, 1));
@@ -15002,10 +15002,6 @@ void Player::_SaveCharacter(bool create, CharacterDatabaseTransaction trans)
         stmt->SetData(index++, IsInWorld() && !GetSession()->PlayerLogout() ? 1 : 0);
         // Index
         stmt->SetData(index++, GetGUID().GetCounter());
-
-        // Battle Rank System
-        stmt->SetData(index++, m_battleRank);
-		stmt->SetData(index++, m_progressPoints);
     }
 
     trans->Append(stmt);
