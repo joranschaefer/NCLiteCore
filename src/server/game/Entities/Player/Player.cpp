@@ -2608,18 +2608,15 @@ void Player::InitStatsForLevel(bool reapplyMods)
     PlayerLevelInfo info;
     sObjectMgr->GetPlayerLevelInfo(getRace(true), getClass(), GetLevel(), &info);
 
-    uint32 maxPlayerLevel = sWorld->getIntConfig(CONFIG_MAX_PLAYER_LEVEL);
-    sScriptMgr->OnSetMaxLevel(this, maxPlayerLevel);
-
-    if (GetBattleRank() == 50) // NetherCrusade
-    {
+    if (GetBattleRank() == 50)
         SetUInt32Value(PLAYER_FIELD_MAX_LEVEL, 60);
-    }
     else
-    {
         SetUInt32Value(PLAYER_FIELD_MAX_LEVEL, 61);
-    }
+
     m_xpCap = sObjectMgr->GetXPForLevel(GetLevel());
+
+    uint32 maxPlayerLevel = sWorld->getIntConfig(CONFIG_MAX_PLAYER_LEVEL);
+    sScriptMgr->OnSetMaxLevel(this, 60);
 
     // reset before any aura state sources (health set/aura apply)
     SetUInt32Value(UNIT_FIELD_AURASTATE, 0);
