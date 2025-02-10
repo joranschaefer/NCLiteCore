@@ -41,6 +41,7 @@ enum PlayerHook
     PLAYERHOOK_ON_PLAYER_KILLED_BY_CREATURE,
     PLAYERHOOK_ON_LEVEL_CHANGED,
     PLAYERHOOK_ON_BATTLERANK_CHANGED,
+    PLAYERHOOK_ON_PRESTIGE_CHANGED,
     PLAYERHOOK_ON_FREE_TALENT_POINTS_CHANGED,
     PLAYERHOOK_ON_TALENTS_RESET,
     PLAYERHOOK_ON_AFTER_SPEC_SLOT_CHANGED,
@@ -252,6 +253,9 @@ public:
 
     // Called when a player's battle rank changes (right after the change is applied)
     virtual void OnBattleRankChanged(Player* /*player*/, uint8 /*oldrank*/) { }
+
+    // Called when a player's prestige changes (right after the change is applied)
+    virtual void OnPrestigeChanged(Player* /*player*/, uint8 /*oldprestige*/) { }
 
     // Called when a player's free talent points change (right before the change is applied)
     virtual void OnFreeTalentPointsChanged(Player* /*player*/, uint32 /*points*/) { }

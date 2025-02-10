@@ -4928,7 +4928,7 @@ bool Player::LoadFromDB(ObjectGuid playerGuid, CharacterDatabaseQueryHolder cons
     // 55      56      57      58      59      60      61      62      63           64                 65                 66             67              68      69
     //"health, power1, power2, power3, power4, power5, power6, power7, instance_id, talentGroupsCount, activeTalentGroup, exploredZones, equipmentCache, ammoId, knownTitles,
     // 70          71               72            73                     74                             75          76
-    //"actionBars, grantableLevels, innTriggerId, extraBonusTalentCount, UNIX_TIMESTAMP(creation_date), battleRank, progressPoints FROM characters WHERE guid = '{}'", guid);
+    //"actionBars, grantableLevels, innTriggerId, extraBonusTalentCount, UNIX_TIMESTAMP(creation_date), battleRank, progressPoints, prestige FROM characters WHERE guid = '{}'", guid);
     PreparedQueryResult result = holder.GetPreparedResult(PLAYER_LOGIN_QUERY_LOAD_FROM);
 
     if (!result)
@@ -5036,6 +5036,8 @@ bool Player::LoadFromDB(ObjectGuid playerGuid, CharacterDatabaseQueryHolder cons
 
     // NC Custom
     m_battleRank = fields[75].Get<uint8>();
+    m_prestige = fields[75].Get<uint32>();
+    UpdatePrestigeVisuals();
     m_progressPoints = fields[76].Get<uint32>();
     SetUInt32Value(PLAYER_XP, m_progressPoints);
     m_progressPointCap = ProgressPointCaps[m_battleRank];

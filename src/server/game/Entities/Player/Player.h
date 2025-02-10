@@ -2998,6 +2998,7 @@ private:
     uint32 manaBeforeDuel;
 
     // Battle Rank System
+    uint8 m_prestige;
     uint8 m_battleRank;
     uint32 m_progressPoints;
     uint32 m_progressPointCap;
@@ -3020,7 +3021,10 @@ private:
     public:
         uint32 m_xp;
         uint32 m_xpCap;
-        uint8 GetBattleRank() { return m_battleRank; }
+        uint8 GetPrestige() { return m_prestige; }
+        void SetPrestige(uint8 prestige);
+        void UpdatePrestigeVisuals();
+        uint8 GetBattleRank() const { return m_battleRank; }
         void SetBattleRank(uint8 rank);
         uint32 GetProgressPoints() { return m_progressPoints; }
         void SetProgressPoints(uint32 points);

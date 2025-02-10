@@ -634,6 +634,7 @@ struct ItemTemplate
     uint32 AllowableRace;
     uint32 ItemLevel;
     uint32 RequiredLevel;
+	uint32 RequiredBattleRank;
     uint32 RequiredSkill;                                   // id from SkillLine.dbc
     uint32 RequiredSkillRank;
     uint32 RequiredSpell;                                   // id from Spell.dbc

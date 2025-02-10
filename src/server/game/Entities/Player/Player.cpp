@@ -390,6 +390,7 @@ Player::Player(WorldSession* session): Unit(true), m_mover(this)
 
     // NC Custom
     m_battleRank = 0;
+    m_prestige = 0;
     m_progressPoints = 0;
     m_premiumDays = 0;
 
@@ -2608,9 +2609,9 @@ void Player::InitStatsForLevel(bool reapplyMods)
     PlayerLevelInfo info;
     sObjectMgr->GetPlayerLevelInfo(getRace(true), getClass(), GetLevel(), &info);
 
-    if (GetBattleRank() == 50)
+    if (GetBattleRank() == 50) 
         SetUInt32Value(PLAYER_FIELD_MAX_LEVEL, 60);
-    else
+    else 
         SetUInt32Value(PLAYER_FIELD_MAX_LEVEL, 61);
 
     m_xpCap = sObjectMgr->GetXPForLevel(GetLevel());
@@ -14853,6 +14854,7 @@ void Player::_SaveCharacter(bool create, CharacterDatabaseTransaction trans)
         stmt->SetData(index++, m_extraBonusTalentCount);
         stmt->SetData(index++, m_battleRank);
         stmt->SetData(index++, m_progressPoints);
+        stmt->SetData(index++, m_prestige);
     }
     else
     {
@@ -14995,6 +14997,7 @@ void Player::_SaveCharacter(bool create, CharacterDatabaseTransaction trans)
         stmt->SetData(index++, m_extraBonusTalentCount);
         stmt->SetData(index++, m_battleRank);
         stmt->SetData(index++, m_progressPoints);
+        stmt->SetData(index++, m_prestige);
 
         stmt->SetData(index++, IsInWorld() && !GetSession()->PlayerLogout() ? 1 : 0);
         // Index
@@ -16421,6 +16424,26 @@ void Player::SetBattleRank(uint8 rank)
 	SetUInt32Value(PLAYER_NEXT_LEVEL_XP, m_progressPointCap);
 
 	sScriptMgr->OnPlayerBattleRankChanged(this, oldRank);
+}
+
+void Player::SetPrestige(uint8 prestige)
+{
+    uint8 oldPrestige = m_prestige;
+    m_prestige = prestige;
+    UpdatePrestigeVisuals();
+    sScriptMgr->OnPlayerPrestigeChanged(this, oldPrestige);
+}
+
+void Player::UpdatePrestigeVisuals()
+{
+    if (m_prestige == 1)
+    {
+        SetUInt32Value(OBJECT_FIELD_ENTRY, 5826); // ID of Geolord Mottle, rare mob
+    }
+    else if (m_prestige == 2)
+    {
+        SetUInt32Value(OBJECT_FIELD_ENTRY, 5048); // ID of Deviate Adder, elite mob
+    }
 }
 
 void Player::SetProgressPoints(uint32 points)
