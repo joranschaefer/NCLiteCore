@@ -1045,6 +1045,8 @@ void WorldSession::SendListInventory(ObjectGuid vendorGuid, uint32 vendorEntry)
 {
     LOG_DEBUG("network", "WORLD: Sent SMSG_LIST_INVENTORY");
 
+    sScriptMgr->OnPlayerSendListInventory(GetPlayer(), vendorGuid, vendorEntry);
+
     Creature* vendor = GetPlayer()->GetNPCIfCanInteractWith(vendorGuid, UNIT_NPC_FLAG_VENDOR);
     if (!vendor)
     {
