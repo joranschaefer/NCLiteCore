@@ -634,7 +634,6 @@ struct ItemTemplate
     uint32 AllowableRace;
     uint32 ItemLevel;
     uint32 RequiredLevel;
-	uint32 RequiredBattleRank;
     uint32 RequiredSkill;                                   // id from SkillLine.dbc
     uint32 RequiredSkillRank;
     uint32 RequiredSpell;                                   // id from Spell.dbc
@@ -693,6 +692,7 @@ struct ItemTemplate
     uint32 MinMoneyLoot;
     uint32 MaxMoneyLoot;
     ItemFlagsCustom FlagsCu;
+    uint32 RequiredBattleRank;                              // NC Customs
     WorldPacket queryData;                                  // pussywizard
 
     // helpers

@@ -2857,7 +2857,7 @@ void ObjectMgr::LoadItemTemplates()
         itemTemplate.FlagsCu                 = ItemFlagsCustom(fields[137].Get<uint32>());
 
         // BattleRankItemReq
-        itemTemplate.RequiredBattleRank		 = fields[138].Get<uint32>();
+        itemTemplate.RequiredBattleRank		 = uint32(fields[138].Get<uint8>());
 
         // Checks
         ItemEntry const* dbcitem = sItemStore.LookupEntry(entry);
