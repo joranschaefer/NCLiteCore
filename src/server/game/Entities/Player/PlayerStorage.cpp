@@ -2742,6 +2742,14 @@ Item* Player::EquipItem(uint16 pos, Item* pItem, bool update)
         {
             ItemTemplate const* pProto = pItem->GetTemplate();
 
+            // NC Custom: Check requied Battle Rank
+            uint8 requiredRank = pProto->RequiredBattleRank;
+            if (requiredRank > GetBattleRank())
+            {
+                SendEquipError(EQUIP_ERR_ITEM_CANT_BE_EQUIPPED, pItem);
+                return nullptr;
+            }
+
             // item set bonuses applied only at equip and removed at unequip, and still active for broken items
             if (pProto && pProto->ItemSet)
                 AddItemsSetItem(this, pItem);

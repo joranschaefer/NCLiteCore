@@ -2385,74 +2385,47 @@ void Player::SendLogXPGain(uint32 GivenXP, Unit* victim, uint32 BonusXP, bool re
 void Player::GiveXP(uint32 xp, Unit* victim, float group_rate, bool isLFGReward)
 {
     if (xp < 1)
-    {
         return;
-    }
 
     if (!IsAlive() && !GetBattlegroundId() && !isLFGReward)
-    {
         return;
-    }
 
     if (HasPlayerFlag(PLAYER_FLAGS_NO_XP_GAIN))
-    {
         return;
-    }
 
     if (victim && victim->IsCreature() && !victim->ToCreature()->hasLootRecipient())
-    {
         return;
-    }
 
-    uint8 level = GetLevel();
+    // ❌ No longer relevant, since we're not using player levels
+    // uint8 level = GetLevel();
 
-    // Favored experience increase START
+    // Optional: Progression-specific XP zone multiplier
     uint32 zone = GetZoneId();
-    float favored_exp_mult = 0;
-    if ((zone == AREA_HELLFIRE_PENINSULA || zone == AREA_HELLFIRE_RAMPARTS || zone == AREA_MAGTHERIDONS_LAIR || zone == AREA_THE_BLOOD_FURNACE || zone == AREA_THE_SHATTERED_HALLS) && HasAnyAuras(32096 /*Thrallmar's Favor*/, 32098 /*Honor Hold's Favor*/))
-        favored_exp_mult = 0.05f; // Thrallmar's Favor and Honor Hold's Favor
+    float favored_exp_mult = 0.0f;
+    if ((zone == AREA_HELLFIRE_PENINSULA || zone == AREA_HELLFIRE_RAMPARTS || zone == AREA_MAGTHERIDONS_LAIR || zone == AREA_THE_BLOOD_FURNACE || zone == AREA_THE_SHATTERED_HALLS) &&
+        HasAnyAuras(32096 /*Thrallmar's Favor*/, 32098 /*Honor Hold's Favor*/))
+    {
+        favored_exp_mult = 0.05f;
+    }
 
     xp = uint32(xp * (1 + favored_exp_mult));
-    // Favored experience increase END
 
-    // XP to money conversion processed in Player::RewardQuest
-    if (level >= sWorld->getIntConfig(CONFIG_MAX_PLAYER_LEVEL))
-        return;
-
+    // RaF/rested XP handling (optional, keep if you want bonus points)
     uint32 bonus_xp = 0;
     bool recruitAFriend = GetsRecruitAFriendBonus(true);
-
-    // RaF does NOT stack with rested experience
     if (recruitAFriend)
-        bonus_xp = 2 * xp; // xp + bonus_xp must add up to 3 * xp for RaF; calculation for quests done client-side
+        bonus_xp = 2 * xp;
     else
-        bonus_xp = victim ? GetXPRestBonus(xp) : 0; // XP resting bonus
+        bonus_xp = victim ? GetXPRestBonus(xp) : 0;
 
-    // hooks and multipliers can modify the xp with a zero or negative value
-    // check again before sending invalid xp to the client
-    if (xp < 1)
-    {
+    if (xp + bonus_xp < 1)
         return;
-    }
 
+    // Optional: Show XP gain in combat log
     SendLogXPGain(xp, victim, bonus_xp, recruitAFriend, group_rate);
 
-    uint32 curXP = m_xp;
-    uint32 nextLvlXP = m_xpCap;
-    uint32 newXP = curXP + xp + bonus_xp;
-
-    while (newXP >= nextLvlXP && level < sWorld->getIntConfig(CONFIG_MAX_PLAYER_LEVEL))
-    {
-        newXP -= nextLvlXP;
-
-        if (level < sWorld->getIntConfig(CONFIG_MAX_PLAYER_LEVEL))
-            GiveLevel(level + 1);
-
-        level = GetLevel();
-        nextLvlXP = m_xpCap;
-    }
-
-    m_xp = newXP;
+    // ✅ Custom progression logic here
+    SetProgressPoints(m_progressPoints + xp + bonus_xp);
 }
 
 // Update player to next level
@@ -16387,36 +16360,47 @@ void Player::UpdatePrestigeVisuals()
 
 void Player::SetProgressPoints(uint32 points)
 {
-	if (m_battleRank >= 50)
-	{
-		m_progressPoints = 1;
-		SetUInt32Value(PLAYER_XP, 1);
-		SetUInt32Value(PLAYER_NEXT_LEVEL_XP, 1);
-		return;
-	}
+    if (m_battleRank >= 50)
+    {
+        m_progressPoints = 1;
+        SetUInt32Value(PLAYER_XP, 1);
+        SetUInt32Value(PLAYER_NEXT_LEVEL_XP, 1);
+        return;
+    }
 
-	m_progressPoints = points;
-	while (m_progressPoints >= m_progressPointCap)
-	{
-		uint32 overflowXP = m_progressPoints - m_progressPointCap;
-		if (m_battleRank < 50)
-		{
-			uint8 oldRank = m_battleRank;
-			m_battleRank++;
-			m_progressPointCap = ProgressPointCaps[m_battleRank];
-			SetUInt32Value(PLAYER_NEXT_LEVEL_XP, m_progressPointCap);
+    m_progressPoints = points;
 
-			sScriptMgr->OnPlayerBattleRankChanged(this, oldRank);
+    while (m_progressPoints >= m_progressPointCap)
+    {
+        if (m_battleRank < 50)
+        {
+            uint32 overflow = m_progressPoints - m_progressPointCap;
 
-			if (m_battleRank >= 50)
-			{
-				m_progressPoints = 1;
-				SetUInt32Value(PLAYER_XP, 1);
-				SetUInt32Value(PLAYER_NEXT_LEVEL_XP, 1);
-				return;
-			}
-		}
-		m_progressPoints = overflowXP;
-	}
-	SetUInt32Value(PLAYER_XP, m_progressPoints);
+            uint8 oldRank = m_battleRank++;
+            m_progressPointCap = ProgressPointCaps[m_battleRank];
+            m_progressPoints = overflow;
+
+            SetUInt32Value(PLAYER_NEXT_LEVEL_XP, m_progressPointCap);
+            SetUInt32Value(PLAYER_XP, m_progressPoints);
+
+            sScriptMgr->OnPlayerBattleRankChanged(this, oldRank);
+
+            if (m_battleRank >= 50)
+            {
+                m_progressPoints = 1;
+                SetUInt32Value(PLAYER_XP, 1);
+                SetUInt32Value(PLAYER_NEXT_LEVEL_XP, 1);
+                return;
+            }
+        }
+        else
+        {
+            m_progressPoints = m_progressPointCap;
+            break;
+        }
+    }
+
+    // Update XP bar to show progress
+    SetUInt32Value(PLAYER_XP, m_progressPoints);
+    SetUInt32Value(PLAYER_NEXT_LEVEL_XP, m_progressPointCap);
 }

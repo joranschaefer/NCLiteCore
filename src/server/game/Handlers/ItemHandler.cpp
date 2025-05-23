@@ -16,6 +16,7 @@
  */
 
 #include "Common.h"
+#include "Chat.h"
 #include "Item.h"
 #include "Log.h"
 #include "ObjectAccessor.h"
@@ -180,6 +181,16 @@ void WorldSession::HandleAutoEquipItemOpcode(WorldPacket& recvData)
         return;
     }
 
+    // NC Customs: check required rank
+    uint8 requiredRank = pProto->RequiredBattleRank;
+    uint8 playerRank = _player->GetBattleRank();
+
+    if (requiredRank > 0 && playerRank < requiredRank)
+    {
+        _player->SendEquipError(EQUIP_ERR_ITEM_CANT_BE_EQUIPPED, pSrcItem);
+        return;
+    }
+
     uint8 eslot = _player->FindEquipSlot(pProto, NULL_SLOT, !pSrcItem->IsBag());
     if (eslot == NULL_SLOT)
     {
@@ -268,19 +279,6 @@ void WorldSession::HandleAutoEquipItemOpcode(WorldPacket& recvData)
         {
             _player->SendEquipError(msg, pDstItem, pSrcItem);
             return;
-        }
-
-        // NC Customs (check if player has required rank for item)
-        if (ItemTemplate const* proto = pSrcItem->GetTemplate())
-        {
-            uint8 requiredRank = proto->RequiredBattleRank;
-            uint8 playerRank = _player->GetBattleRank();
-
-            if (requiredRank > 0 && playerRank < requiredRank)
-            {
-                _player->SendEquipError(EQUIP_ERR_ITEM_LOCKED, pSrcItem, nullptr);
-                return;
-            }
         }
 
         // now do moves, remove...

@@ -210,7 +210,6 @@ enum PlayerHook
     PLAYERHOOK_ON_BEFORE_UPDATE_SKILL,
     PLAYERHOOK_ON_UPDATE_SKILL,
     PLAYERHOOK_CAN_RESURRECT,
-    PLAYERHOOK_ON_BATLLERANK_CHANGED,
     PLAYERHOOK_ON_CAN_GIVE_LEVEL,
     PLAYERHOOK_ON_SEND_LIST_INVENTORY,
     PLAYERHOOK_END
@@ -259,7 +258,7 @@ public:
     virtual void OnPlayerLevelChanged(Player* /*player*/, uint8 /*oldlevel*/) { }
 
     // Called when a player's battle rank changes (right after the change is applied)
-    virtual void OnBattleRankChanged(Player* /*player*/, uint8 /*oldrank*/) { }
+    virtual void OnPlayerBattleRankChanged(Player* /*player*/, uint8 /*oldrank*/) { }
 
     // Called when a player's prestige changes (right after the change is applied)
     virtual void OnPrestigeChanged(Player* /*player*/, uint8 /*oldprestige*/) { }
