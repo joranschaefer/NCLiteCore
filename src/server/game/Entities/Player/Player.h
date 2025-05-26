@@ -3000,6 +3000,13 @@ private:
     uint32 healthBeforeDuel;
     uint32 manaBeforeDuel;
 
+    // Battle Rank System
+    uint8 m_prestige;
+    uint8 m_battleRank;
+    uint32 m_progressPoints;
+    uint32 m_progressPointCap;
+    int32 m_premiumDays;
+
     bool m_isInstantFlightOn;
 
     uint32 m_flightSpellActivated;
@@ -3013,6 +3020,23 @@ private:
     PlayerSettingMap m_charSettingsMap;
 
     Seconds m_creationTime;
+
+    public:
+        uint32 m_xp;
+        uint32 m_xpCap;
+        uint8 GetPrestige() { return m_prestige; }
+        void SetPrestige(uint8 prestige);
+        void UpdatePrestigeVisuals();
+        uint8 GetBattleRank() const { return m_battleRank; }
+        void SetBattleRank(uint8 rank);
+        uint32 GetProgressPoints() { return m_progressPoints; }
+        void SetProgressPoints(uint32 points);
+        uint32 GetProgressPointCap() { return m_progressPointCap; }
+        static std::vector<uint32> ProgressPointCaps;
+
+        int GetPremiumDays() { return m_premiumDays; }
+        void SetPremiumDays(int32 days) { m_premiumDays = days; }
+        bool IsPremium() { return m_premiumDays > 0; }
 };
 
 void AddItemsSetItem(Player* player, Item* item);

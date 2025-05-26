@@ -692,6 +692,7 @@ struct ItemTemplate
     uint32 MinMoneyLoot;
     uint32 MaxMoneyLoot;
     ItemFlagsCustom FlagsCu;
+    uint32 RequiredBattleRank;                              // NC Customs
     WorldPacket queryData;                                  // pussywizard
 
     // helpers

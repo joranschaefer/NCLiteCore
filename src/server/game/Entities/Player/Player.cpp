@@ -393,6 +393,12 @@ Player::Player(WorldSession* session): Unit(true), m_mover(this)
     m_achievementMgr = new AchievementMgr(this);
     m_reputationMgr = new ReputationMgr(this);
 
+    // NC Custom
+    m_battleRank = 0;
+    m_prestige = 0;
+    m_progressPoints = 0;
+    m_premiumDays = 0;
+
     // Ours
     m_NeedToSaveGlyphs = false;
     m_MountBlockId = 0;
@@ -2398,8 +2404,6 @@ void Player::GiveXP(uint32 xp, Unit* victim, float group_rate, bool isLFGReward)
         return;
     }
 
-    uint8 level = GetLevel();
-
     // Favored experience increase START
     uint32 zone = GetZoneId();
     float favored_exp_mult = 0;
@@ -2408,10 +2412,6 @@ void Player::GiveXP(uint32 xp, Unit* victim, float group_rate, bool isLFGReward)
 
     xp = uint32(xp * (1 + favored_exp_mult));
     // Favored experience increase END
-
-    // XP to money conversion processed in Player::RewardQuest
-    if (level >= sWorld->getIntConfig(CONFIG_MAX_PLAYER_LEVEL))
-        return;
 
     uint32 bonus_xp = 0;
     bool recruitAFriend = GetsRecruitAFriendBonus(true);
@@ -2430,23 +2430,7 @@ void Player::GiveXP(uint32 xp, Unit* victim, float group_rate, bool isLFGReward)
     }
 
     SendLogXPGain(xp, victim, bonus_xp, recruitAFriend, group_rate);
-
-    uint32 curXP = GetUInt32Value(PLAYER_XP);
-    uint32 nextLvlXP = GetUInt32Value(PLAYER_NEXT_LEVEL_XP);
-    uint32 newXP = curXP + xp + bonus_xp;
-
-    while (newXP >= nextLvlXP && level < sWorld->getIntConfig(CONFIG_MAX_PLAYER_LEVEL))
-    {
-        newXP -= nextLvlXP;
-
-        if (level < sWorld->getIntConfig(CONFIG_MAX_PLAYER_LEVEL))
-            GiveLevel(level + 1);
-
-        level = GetLevel();
-        nextLvlXP = GetUInt32Value(PLAYER_NEXT_LEVEL_XP);
-    }
-
-    SetUInt32Value(PLAYER_XP, newXP);
+    SetProgressPoints(m_progressPoints);
 }
 
 // Update player to next level
@@ -2487,7 +2471,8 @@ void Player::GiveLevel(uint8 level)
 
     SendDirectMessage(packet.Write());
 
-    SetUInt32Value(PLAYER_NEXT_LEVEL_XP, sObjectMgr->GetXPForLevel(level));
+    //SetUInt32Value(PLAYER_NEXT_LEVEL_XP, sObjectMgr->GetXPForLevel(level));
+    m_xpCap = sObjectMgr->GetXPForLevel(level);
 
     //update level, max level of skills
     m_Played_time[PLAYED_TIME_LEVEL] = 0;                   // Level Played Time reset
@@ -2590,10 +2575,17 @@ void Player::InitStatsForLevel(bool reapplyMods)
     PlayerLevelInfo info;
     sObjectMgr->GetPlayerLevelInfo(getRace(true), getClass(), GetLevel(), &info);
 
-    uint32 maxPlayerLevel = sWorld->getIntConfig(CONFIG_MAX_PLAYER_LEVEL);
-    sScriptMgr->OnPlayerSetMaxLevel(this, maxPlayerLevel);
-    SetUInt32Value(PLAYER_FIELD_MAX_LEVEL, maxPlayerLevel);
-    SetUInt32Value(PLAYER_NEXT_LEVEL_XP, sObjectMgr->GetXPForLevel(GetLevel()));
+    //uint32 maxPlayerLevel = sWorld->getIntConfig(CONFIG_MAX_PLAYER_LEVEL);
+    //sScriptMgr->OnPlayerSetMaxLevel(this, maxPlayerLevel);
+    //SetUInt32Value(PLAYER_FIELD_MAX_LEVEL, maxPlayerLevel);
+    //SetUInt32Value(PLAYER_NEXT_LEVEL_XP, sObjectMgr->GetXPForLevel(GetLevel()));
+
+    if (GetBattleRank() == 50)
+        SetUInt32Value(PLAYER_FIELD_MAX_LEVEL, 60);
+    else
+        SetUInt32Value(PLAYER_FIELD_MAX_LEVEL, 61);
+
+    m_xpCap = sObjectMgr->GetXPForLevel(GetLevel());
 
     // reset before any aura state sources (health set/aura apply)
     SetUInt32Value(UNIT_FIELD_AURASTATE, 0);
@@ -10725,7 +10717,12 @@ bool Player::BuyItemFromVendorSlot(ObjectGuid vendorguid, uint32 vendorslot, uin
         return false;
     }
 
-    VendorItemData const* vItems = GetSession()->GetCurrentVendor() ? sObjectMgr->GetNpcVendorItemList(GetSession()->GetCurrentVendor()) : creature->GetVendorItems();
+    //VendorItemData const* vItems = GetSession()->GetCurrentVendor() ? sObjectMgr->GetNpcVendorItemList(GetSession()->GetCurrentVendor()) : creature->GetVendorItems();
+    uint32 currentVendor = GetSession()->GetCurrentVendor();
+    if (currentVendor && vendorguid != PlayerTalkClass->GetGossipMenu().GetSenderGUID())
+        return false; // Cheating
+
+    VendorItemData const* vItems = currentVendor ? sObjectMgr->GetNpcVendorItemList(currentVendor) : creature->GetVendorItems();
     if (!vItems || vItems->Empty())
     {
         SendBuyError(BUY_ERR_CANT_FIND_ITEM, creature, item, 0);
@@ -14656,7 +14653,8 @@ void Player::_SaveCharacter(bool create, CharacterDatabaseTransaction trans)
         stmt->SetData(index++, getClass());
         stmt->SetData(index++, GetByteValue(PLAYER_BYTES_3, 0));   // save gender from PLAYER_BYTES_3, UNIT_BYTES_0 changes with every transform effect
         stmt->SetData(index++, GetLevel());
-        stmt->SetData(index++, GetUInt32Value(PLAYER_XP));
+        //stmt->SetData(index++, GetUInt32Value(PLAYER_XP));
+        stmt->SetData(index++, m_xp);
         stmt->SetData(index++, GetMoney());
         stmt->SetData(index++, GetByteValue(PLAYER_BYTES, 0));
         stmt->SetData(index++, GetByteValue(PLAYER_BYTES, 1));
@@ -14764,6 +14762,9 @@ void Player::_SaveCharacter(bool create, CharacterDatabaseTransaction trans)
         stmt->SetData(index++, m_grantableLevels);
         stmt->SetData(index++, _innTriggerId);
         stmt->SetData(index++, m_extraBonusTalentCount);
+        stmt->SetData(index++, m_battleRank);
+        stmt->SetData(index++, m_progressPoints);
+        stmt->SetData(index++, m_prestige);
     }
     else
     {
@@ -14774,7 +14775,8 @@ void Player::_SaveCharacter(bool create, CharacterDatabaseTransaction trans)
         stmt->SetData(index++, getClass());
         stmt->SetData(index++, GetByteValue(PLAYER_BYTES_3, 0));   // save gender from PLAYER_BYTES_3, UNIT_BYTES_0 changes with every transform effect
         stmt->SetData(index++, GetLevel());
-        stmt->SetData(index++, GetUInt32Value(PLAYER_XP));
+        //stmt->SetData(index++, GetUInt32Value(PLAYER_XP));
+        stmt->SetData(index++, m_xp);
         stmt->SetData(index++, GetMoney());
         stmt->SetData(index++, GetByteValue(PLAYER_BYTES, 0));
         stmt->SetData(index++, GetByteValue(PLAYER_BYTES, 1));
@@ -14904,6 +14906,9 @@ void Player::_SaveCharacter(bool create, CharacterDatabaseTransaction trans)
         stmt->SetData(index++, m_grantableLevels);
         stmt->SetData(index++, _innTriggerId);
         stmt->SetData(index++, m_extraBonusTalentCount);
+        stmt->SetData(index++, m_battleRank);
+        stmt->SetData(index++, m_progressPoints);
+        stmt->SetData(index++, m_prestige);
 
         stmt->SetData(index++, IsInWorld() && !GetSession()->PlayerLogout() ? 1 : 0);
         // Index
@@ -16316,4 +16321,85 @@ std::string Player::GetDebugInfo() const
 void Player::SendSystemMessage(std::string_view msg, bool escapeCharacters)
 {
     ChatHandler(GetSession()).SendSysMessage(msg, escapeCharacters);
+}
+
+std::vector<uint32> Player::ProgressPointCaps;
+
+void Player::SetBattleRank(uint8 rank)
+{
+    uint8 oldRank = m_battleRank;
+    m_battleRank = rank;
+    m_progressPoints = 0;
+    SetUInt32Value(PLAYER_XP, m_progressPoints);
+    m_progressPointCap = ProgressPointCaps[m_battleRank];
+    SetUInt32Value(PLAYER_NEXT_LEVEL_XP, m_progressPointCap);
+
+    sScriptMgr->OnPlayerBattleRankChanged(this, oldRank);
+}
+
+void Player::SetPrestige(uint8 prestige)
+{
+    uint8 oldPrestige = m_prestige;
+    m_prestige = prestige;
+    UpdatePrestigeVisuals();
+    sScriptMgr->OnPlayerPrestigeChanged(this, oldPrestige);
+}
+
+void Player::UpdatePrestigeVisuals()
+{
+    if (m_prestige == 1)
+    {
+        SetUInt32Value(OBJECT_FIELD_ENTRY, 5826); // ID of Geolord Mottle, rare mob
+    }
+    else if (m_prestige == 2)
+    {
+        SetUInt32Value(OBJECT_FIELD_ENTRY, 5048); // ID of Deviate Adder, elite mob
+    }
+}
+
+void Player::SetProgressPoints(uint32 points)
+{
+    if (m_battleRank >= 50)
+    {
+        m_progressPoints = 1;
+        SetUInt32Value(PLAYER_XP, 1);
+        SetUInt32Value(PLAYER_NEXT_LEVEL_XP, 1);
+        return;
+    }
+
+    m_progressPoints = points;
+
+    while (m_progressPoints >= m_progressPointCap)
+    {
+        if (m_battleRank < 50)
+        {
+            uint32 overflow = m_progressPoints - m_progressPointCap;
+
+            uint8 oldRank = m_battleRank++;
+            m_progressPointCap = ProgressPointCaps[m_battleRank];
+            m_progressPoints = overflow;
+
+            SetUInt32Value(PLAYER_NEXT_LEVEL_XP, m_progressPointCap);
+            SetUInt32Value(PLAYER_XP, m_progressPoints);
+
+            sScriptMgr->OnPlayerBattleRankChanged(this, oldRank);
+
+            if (m_battleRank >= 50)
+            {
+                m_progressPoints = 1;
+                SetUInt32Value(PLAYER_XP, 1);
+                SetUInt32Value(PLAYER_NEXT_LEVEL_XP, 1);
+                return;
+            }
+        }
+        else
+        {
+            m_progressPoints = m_progressPointCap;
+            break;
+        }
+    }
+
+    // Update XP bar to show progress
+    SetUInt32Value(PLAYER_XP, m_progressPoints);
+    SetUInt32Value(PLAYER_NEXT_LEVEL_XP, m_progressPointCap);
 }
