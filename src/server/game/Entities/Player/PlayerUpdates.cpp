@@ -247,9 +247,7 @@ void Player::Update(uint32 p_time)
                 _restTime = currTime;
 
                 float bubble = 0.125f * sWorld->getRate(RATE_REST_INGAME);
-                float extraPerSec =
-                    ((float) GetUInt32Value(PLAYER_NEXT_LEVEL_XP) / 72000.0f) *
-                    bubble;
+                float extraPerSec = ((float)m_xpCap / 72000.0f) * bubble;
 
                 // speed collect rest bonus (section/in hour)
                 SetRestBonus(GetRestBonus() + timeDiff * extraPerSec);
@@ -424,6 +422,7 @@ void Player::Update(uint32 p_time)
         m_delayed_unit_relocation_timer = 0;
         RemoveFromNotify(NOTIFY_VISIBILITY_CHANGED);
     }
+    sScriptMgr->OnPlayerAfterUpdate(this, p_time);
 }
 
 void Player::UpdateMirrorTimers()

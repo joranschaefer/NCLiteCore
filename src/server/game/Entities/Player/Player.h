@@ -675,7 +675,7 @@ enum PlayerSlots
 
 #define INVENTORY_SLOT_BAG_0    255
 
-enum EquipmentSlots                                         // 19 slots
+enum EquipmentSlots : uint32                                 // 19 slots
 {
     EQUIPMENT_SLOT_START        = 0,
     EQUIPMENT_SLOT_HEAD         = 0,
@@ -844,16 +844,6 @@ enum EnviromentalDamage
     DAMAGE_SLIME     = 4,
     DAMAGE_FIRE      = 5,
     DAMAGE_FALL_TO_VOID = 6                                 // custom case for fall without durability loss
-};
-
-enum PlayerChatTag
-{
-    CHAT_TAG_NONE       = 0x00,
-    CHAT_TAG_AFK        = 0x01,
-    CHAT_TAG_DND        = 0x02,
-    CHAT_TAG_GM         = 0x04,
-    CHAT_TAG_COM        = 0x08, // Commentator tag. Do not exist in clean client
-    CHAT_TAG_DEV        = 0x10,
 };
 
 enum PlayedTimeIndex
@@ -2075,6 +2065,7 @@ public:
 
     void JoinedChannel(Channel* c);
     void LeftChannel(Channel* c);
+    bool IsInChannel(const Channel* c);
     void CleanupChannels();
     void ClearChannelWatch();
     void UpdateLFGChannel();
@@ -2640,6 +2631,8 @@ public:
 
     void SendSystemMessage(std::string_view msg, bool escapeCharacters = false);
 
+    void ResetSpeakTimers();
+
     std::string GetDebugInfo() const override;
 
     /*********************************************************/
@@ -3007,6 +3000,13 @@ private:
     uint32 healthBeforeDuel;
     uint32 manaBeforeDuel;
 
+    // Battle Rank System
+    uint8 m_prestige;
+    uint8 m_battleRank;
+    uint32 m_progressPoints;
+    uint32 m_progressPointCap;
+    int32 m_premiumDays;
+
     bool m_isInstantFlightOn;
 
     uint32 m_flightSpellActivated;
@@ -3020,6 +3020,23 @@ private:
     PlayerSettingMap m_charSettingsMap;
 
     Seconds m_creationTime;
+
+    public:
+        uint32 m_xp;
+        uint32 m_xpCap;
+        uint8 GetPrestige() { return m_prestige; }
+        void SetPrestige(uint8 prestige);
+        void UpdatePrestigeVisuals();
+        uint8 GetBattleRank() const { return m_battleRank; }
+        void SetBattleRank(uint8 rank);
+        uint32 GetProgressPoints() { return m_progressPoints; }
+        void SetProgressPoints(uint32 points);
+        uint32 GetProgressPointCap() { return m_progressPointCap; }
+        static std::vector<uint32> ProgressPointCaps;
+
+        int GetPremiumDays() { return m_premiumDays; }
+        void SetPremiumDays(int32 days) { m_premiumDays = days; }
+        bool IsPremium() { return m_premiumDays > 0; }
 };
 
 void AddItemsSetItem(Player* player, Item* item);

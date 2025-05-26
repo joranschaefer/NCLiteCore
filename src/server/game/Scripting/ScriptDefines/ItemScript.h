@@ -48,6 +48,12 @@ public:
 
     // Called when a player selects an option in an item gossip window
     virtual void OnGossipSelectCode(Player* /*player*/, Item* /*item*/, uint32 /*sender*/, uint32 /*action*/, const char* /*code*/) { }
+
+    // Called when a player buys an item from a vendor.
+    virtual bool OnBuy(Player* player, uint32 item) { return true; }
+
+    // Called when a player sells an item to a vendor.
+    virtual bool OnSell(Player* player, uint32 item) { return true; }
 };
 
 #endif

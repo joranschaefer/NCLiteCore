@@ -16,6 +16,7 @@
  */
 
 #include "Common.h"
+#include "Chat.h"
 #include "Item.h"
 #include "Log.h"
 #include "ObjectAccessor.h"
@@ -177,6 +178,16 @@ void WorldSession::HandleAutoEquipItemOpcode(WorldPacket& recvData)
     if (!pProto)
     {
         _player->SendEquipError(pSrcItem->IsBag() ? EQUIP_ERR_ITEM_NOT_FOUND : EQUIP_ERR_ITEMS_CANT_BE_SWAPPED, pSrcItem);
+        return;
+    }
+
+    // NC Customs: Check required rank
+    uint8 requiredRank = pProto->RequiredBattleRank;
+    uint8 playerRank = _player->GetBattleRank();
+
+    if (requiredRank > 0 && playerRank < requiredRank)
+    {
+        _player->SendEquipError(EQUIP_ERR_ITEM_CANT_BE_EQUIPPED, pSrcItem);
         return;
     }
 
@@ -801,6 +812,9 @@ void WorldSession::HandleSellItemOpcode(WorldPacket& recvData)
             }
         }
 
+        if (!sScriptMgr->OnItemSell(_player, pItem->GetEntry()))
+            return;
+
         ItemTemplate const* pProto = pItem->GetTemplate();
         if (pProto)
         {
@@ -998,6 +1012,9 @@ void WorldSession::HandleBuyItemInSlotOpcode(WorldPacket& recvData)
     if (bag == NULL_BAG)
         return;
 
+    if (!sScriptMgr->OnItemBuy(_player, item))
+        return;
+
     GetPlayer()->BuyItemFromVendorSlot(vendorguid, slot, item, count, bag, bagslot);
 }
 
@@ -1014,6 +1031,25 @@ void WorldSession::HandleBuyItemOpcode(WorldPacket& recvData)
         --slot;
     else
         return; // cheating
+
+    if (!sScriptMgr->OnItemBuy(_player, item))
+        return;
+
+    if (ItemTemplate const* itemProto = sObjectMgr->GetItemTemplate(item))
+    {
+        uint8 requiredRank = itemProto->RequiredBattleRank;
+        uint8 playerRank = _player->GetBattleRank();
+
+        if (requiredRank > 0 && playerRank < requiredRank)
+        {
+            WorldPacket data(SMSG_BUY_FAILED, 12);
+            //data << uint64(vendorguid);
+            data << uint32(item);
+            data << uint8(BUY_ERR_RANK_REQUIRE);
+            SendPacket(&data);
+            return;
+        }
+    }
 
     GetPlayer()->BuyItemFromVendorSlot(vendorguid, slot, item, count, NULL_BAG, NULL_SLOT);
 }
