@@ -16335,20 +16335,13 @@ void Player::SetPrestige(uint8 prestige)
 {
     uint8 oldPrestige = m_prestige;
     m_prestige = prestige;
-    UpdatePrestigeVisuals();
     sScriptMgr->OnPlayerPrestigeChanged(this, oldPrestige);
 }
 
-void Player::UpdatePrestigeVisuals()
+void Player::SetPrestigePlayerFrame(uint32 entry)
 {
-    if (m_prestige == 1)
-    {
-        SetUInt32Value(OBJECT_FIELD_ENTRY, 5826); // ID of Geolord Mottle, rare mob
-    }
-    else if (m_prestige == 2)
-    {
-        SetUInt32Value(OBJECT_FIELD_ENTRY, 5048); // ID of Deviate Adder, elite mob
-    }
+    SetUInt32Value(OBJECT_FIELD_ENTRY, entry);
+    return;
 }
 
 void Player::SetProgressPoints(uint32 points)

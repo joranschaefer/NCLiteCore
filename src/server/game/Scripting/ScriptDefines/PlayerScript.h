@@ -262,7 +262,7 @@ public:
     virtual void OnPlayerBattleRankChanged(Player* /*player*/, uint8 /*oldrank*/) {}
 
     // Called when a player's prestige changes (right after the change is applied)
-    virtual void OnPrestigeChanged(Player* /*player*/, uint8 /*oldprestige*/) {}
+    virtual void OnPlayerPrestigeChanged(Player* /*player*/, uint8 /*oldprestige*/) {}
 
     // Called when a player's free talent points change (right before the change is applied)
     virtual void OnPlayerFreeTalentPointsChanged(Player* /*player*/, uint32 /*points*/) { }

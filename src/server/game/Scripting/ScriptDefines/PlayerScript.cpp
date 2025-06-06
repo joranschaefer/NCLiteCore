@@ -106,7 +106,7 @@ void ScriptMgr::OnPlayerBattleRankChanged(Player* player, uint8 oldRank)
 
 void ScriptMgr::OnPlayerPrestigeChanged(Player* player, uint8 oldPrestige)
 {
-    CALL_ENABLED_HOOKS(PlayerScript, PLAYERHOOK_ON_PRESTIGE_CHANGED, script->OnPrestigeChanged(player, oldPrestige));
+    CALL_ENABLED_HOOKS(PlayerScript, PLAYERHOOK_ON_PRESTIGE_CHANGED, script->OnPlayerPrestigeChanged(player, oldPrestige));
 }
 
 void ScriptMgr::OnPlayerFreeTalentPointsChanged(Player* player, uint32 points)

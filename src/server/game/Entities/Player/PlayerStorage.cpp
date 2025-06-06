@@ -5045,9 +5045,8 @@ bool Player::LoadFromDB(ObjectGuid playerGuid, CharacterDatabaseQueryHolder cons
 
     // NC Custom
     m_battleRank = fields[75].Get<uint8>();
-    m_prestige = fields[75].Get<uint32>();
-    UpdatePrestigeVisuals();
     m_progressPoints = fields[76].Get<uint32>();
+    m_prestige = fields[77].Get<uint8>();
     SetUInt32Value(PLAYER_XP, m_progressPoints);
     m_progressPointCap = ProgressPointCaps[m_battleRank];
     SetUInt32Value(PLAYER_NEXT_LEVEL_XP, m_progressPointCap);
