@@ -1015,6 +1015,22 @@ void WorldSession::HandleBuyItemInSlotOpcode(WorldPacket& recvData)
     if (!sScriptMgr->OnItemBuy(_player, item))
         return;
 
+    if (ItemTemplate const* itemProto = sObjectMgr->GetItemTemplate(item))
+    {
+        uint8 requiredRank = itemProto->RequiredBattleRank;
+        uint8 playerRank = _player->GetBattleRank();
+
+        if (requiredRank > 0 && playerRank < requiredRank)
+        {
+            WorldPacket data(SMSG_BUY_FAILED, 12);
+            //data << uint64(vendorguid);
+            data << uint32(item);
+            data << uint8(BUY_ERR_RANK_REQUIRE);
+            SendPacket(&data);
+            return;
+        }
+    }
+
     GetPlayer()->BuyItemFromVendorSlot(vendorguid, slot, item, count, bag, bagslot);
 }
 
