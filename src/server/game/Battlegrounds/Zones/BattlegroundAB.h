@@ -285,6 +285,7 @@ public:
     TeamId GetPrematureWinner() override;
 
     [[nodiscard]] CaptureABPointInfo const& GetCapturePointInfo(uint32 node) const { return _capturePointInfo[node]; }
+    Player* _nodeContestPlayers[BG_AB_DYNAMIC_NODES_COUNT];
 
 private:
     void PostUpdateImpl(uint32 diff) override;

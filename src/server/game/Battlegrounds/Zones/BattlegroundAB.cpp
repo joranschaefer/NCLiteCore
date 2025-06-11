@@ -20,11 +20,19 @@
 #include "Creature.h"
 #include "GameGraveyard.h"
 #include "Player.h"
+#include "ScriptMgr.h"
 #include "Util.h"
 #include "WorldPacket.h"
 #include "WorldSession.h"
 #include "WorldStatePackets.h"
 #include "WorldStateDefines.h"
+
+enum BG_AB_CAPTURE_EVENTS
+{
+    BG_AB_BASE_CONTESTED,
+    BG_AB_BASE_DEFENDED,
+    BG_AB_BASE_CAPTURED
+};
 
 void BattlegroundABScore::BuildObjectivesBlock(WorldPacket& data)
 {
@@ -45,6 +53,7 @@ BattlegroundAB::BattlegroundAB()
     _teamScores500Disadvantage[TEAM_HORDE] = false;
     _honorTics = 0;
     _reputationTics = 0;
+    _nodeContestPlayers[BG_AB_DYNAMIC_NODES_COUNT] = nullptr;
 }
 
 BattlegroundAB::~BattlegroundAB() = default;
@@ -183,6 +192,9 @@ void BattlegroundAB::AddPlayer(Player* player)
 void BattlegroundAB::RemovePlayer(Player* player)
 {
     player->SetPhaseMask(1, false);
+    for (int i = 0; i < BG_AB_DYNAMIC_NODES_COUNT; i++)
+        if (_nodeContestPlayers[i] == player)
+            _nodeContestPlayers[i] = nullptr;
 }
 
 void BattlegroundAB::HandleAreaTrigger(Player* player, uint32 trigger)
@@ -282,6 +294,12 @@ void BattlegroundAB::NodeOccupied(uint8 node)
     if (!trigger)
         trigger = AddCreature(WORLD_TRIGGER, BG_AB_ALL_NODES_COUNT + node, BG_AB_NodePositions[node][0], BG_AB_NodePositions[node][1], BG_AB_NodePositions[node][2], BG_AB_NodePositions[node][3]);
 
+    if (_nodeContestPlayers[node] != nullptr)
+    {
+        sScriptMgr->OnBattlegroundObjectiveCaptured(this, GetBgTypeID(), GetInstanceID(), _nodeContestPlayers[node], BG_AB_CAPTURE_EVENTS::BG_AB_BASE_CAPTURED);
+        _nodeContestPlayers[node] = nullptr;
+    }
+
     if (trigger)
     {
         trigger->SetFaction(_capturePointInfo[node]._ownerTeamId == TEAM_ALLIANCE ? FACTION_ALLIANCE_GENERIC : FACTION_HORDE_GENERIC);
@@ -302,6 +320,7 @@ void BattlegroundAB::NodeDeoccupied(uint8 node)
     }, 500ms);
 
     DelCreature(BG_AB_ALL_NODES_COUNT + node); // Delete aura trigger
+    _nodeContestPlayers[node] = nullptr;
 }
 
 void BattlegroundAB::EventPlayerClickedOnFlag(Player* player, GameObject* gameObject)
@@ -335,6 +354,7 @@ void BattlegroundAB::EventPlayerClickedOnFlag(Player* player, GameObject* gameOb
         _capturePointInfo[node]._ownerTeamId = TEAM_NEUTRAL;
         _bgEvents.RescheduleEvent(BG_AB_EVENT_CAPTURE_STABLE + node, BG_AB_FLAG_CAPTURING_TIME);
         sound = BG_AB_SOUND_NODE_CLAIMED;
+        _nodeContestPlayers[node] = player;
 
         if (teamid == TEAM_ALLIANCE)
         {
@@ -372,6 +392,8 @@ void BattlegroundAB::EventPlayerClickedOnFlag(Player* player, GameObject* gameOb
             _bgEvents.CancelEvent(BG_AB_EVENT_CAPTURE_STABLE + node);
             NodeOccupied(node); // after setting team owner
 
+            _nodeContestPlayers[node] = player;
+
             if (teamid == TEAM_ALLIANCE)
             {
                 SendBroadcastText(ABNodes[node].TextAllianceDefended, CHAT_MSG_BG_SYSTEM_ALLIANCE, player);
@@ -383,6 +405,7 @@ void BattlegroundAB::EventPlayerClickedOnFlag(Player* player, GameObject* gameOb
         }
 
         sound = player->GetTeamId() == TEAM_ALLIANCE ? BG_AB_SOUND_NODE_ASSAULTED_ALLIANCE : BG_AB_SOUND_NODE_ASSAULTED_HORDE;
+        _nodeContestPlayers[node] = nullptr;
     }
     else
     {
@@ -470,6 +493,7 @@ void BattlegroundAB::Init()
 
     _honorTics = BattlegroundMgr::IsBGWeekend(GetBgTypeID(true)) ? BG_AB_HONOR_TICK_WEEKEND : BG_AB_HONOR_TICK_NORMAL;
     _reputationTics = BattlegroundMgr::IsBGWeekend(GetBgTypeID(true)) ? BG_AB_REP_TICK_WEEKEND : BG_AB_REP_TICK_NORMAL;
+    _nodeContestPlayers[BG_AB_DYNAMIC_NODES_COUNT] = nullptr;
 
     _capturePointInfo[BG_AB_NODE_STABLES]._iconNone = WORLD_STATE_BATTLEGROUND_AB_STABLE_ICON;
     _capturePointInfo[BG_AB_NODE_FARM]._iconNone = WORLD_STATE_BATTLEGROUND_AB_FARM_ICON;

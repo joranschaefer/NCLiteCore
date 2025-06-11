@@ -22,9 +22,18 @@
 #include "Object.h"
 #include "ObjectMgr.h"
 #include "Player.h"
+#include "ScriptMgr.h"
 #include "World.h"
 #include "WorldPacket.h"
 #include "WorldStateDefines.h"
+
+enum BG_WSG_CAPTURE_EVENTS
+{
+    BG_WSG_FLAG_PICKUP,
+    BG_WSG_FLAG_CAPTURE,
+    BG_WSG_FLAG_RETURN,
+    BG_WSG_TESTEVENT, // Used for testing purposes
+};
 
 void BattlegroundWGScore::BuildObjectivesBlock(WorldPacket& data)
 {
@@ -146,6 +155,8 @@ void BattlegroundWS::AddPlayer(Player* player)
 {
     Battleground::AddPlayer(player);
     PlayerScores.emplace(player->GetGUID().GetCounter(), new BattlegroundWGScore(player->GetGUID()));
+
+    sScriptMgr->OnBattlegroundObjectiveCaptured(this, GetBgTypeID(), GetInstanceID(), player, BG_WSG_CAPTURE_EVENTS::BG_WSG_TESTEVENT);
 }
 
 void BattlegroundWS::RespawnFlagAfterDrop(TeamId teamId)
@@ -191,6 +202,8 @@ void BattlegroundWS::EventPlayerCapturedFlag(Player* player)
 {
     if (GetStatus() != STATUS_IN_PROGRESS)
         return;
+
+    sScriptMgr->OnBattlegroundObjectiveCaptured(this, GetBgTypeID(), GetInstanceID(), player, BG_WSG_CAPTURE_EVENTS::BG_WSG_FLAG_CAPTURE);
 
     player->RemoveAurasWithInterruptFlags(AURA_INTERRUPT_FLAG_ENTER_PVP_COMBAT);
     RemoveAssaultAuras();
@@ -289,6 +302,7 @@ void BattlegroundWS::EventPlayerClickedOnFlag(Player* player, GameObject* gameOb
             _bgEvents.RescheduleEvent(BG_WS_EVENT_BOTH_FLAGS_KEPT10, BG_WS_SPELL_FORCE_TIME);
             _bgEvents.RescheduleEvent(BG_WS_EVENT_BOTH_FLAGS_KEPT15, BG_WS_SPELL_BRUTAL_TIME);
         }
+        sScriptMgr->OnBattlegroundObjectiveCaptured(this, GetBgTypeID(), GetInstanceID(), player, BG_WSG_CAPTURE_EVENTS::BG_WSG_FLAG_PICKUP);
         return;
     }
 
@@ -309,6 +323,7 @@ void BattlegroundWS::EventPlayerClickedOnFlag(Player* player, GameObject* gameOb
             _bgEvents.RescheduleEvent(BG_WS_EVENT_BOTH_FLAGS_KEPT10, BG_WS_SPELL_FORCE_TIME);
             _bgEvents.RescheduleEvent(BG_WS_EVENT_BOTH_FLAGS_KEPT15, BG_WS_SPELL_BRUTAL_TIME);
         }
+        sScriptMgr->OnBattlegroundObjectiveCaptured(this, GetBgTypeID(), GetInstanceID(), player, BG_WSG_CAPTURE_EVENTS::BG_WSG_FLAG_PICKUP);
         return;
     }
     if (player->IsMounted())
@@ -333,6 +348,7 @@ void BattlegroundWS::EventPlayerClickedOnFlag(Player* player, GameObject* gameOb
             RemoveAssaultAuras();
 
             CheckFlagKeeperInArea(TEAM_HORDE);
+            sScriptMgr->OnBattlegroundObjectiveCaptured(this, GetBgTypeID(), GetInstanceID(), player, BG_WSG_CAPTURE_EVENTS::BG_WSG_FLAG_RETURN);
             return;
         }
         else
@@ -366,6 +382,7 @@ void BattlegroundWS::EventPlayerClickedOnFlag(Player* player, GameObject* gameOb
             RemoveAssaultAuras();
 
             CheckFlagKeeperInArea(TEAM_ALLIANCE);
+            sScriptMgr->OnBattlegroundObjectiveCaptured(this, GetBgTypeID(), GetInstanceID(), player, BG_WSG_CAPTURE_EVENTS::BG_WSG_FLAG_RETURN);
             return;
         }
         else
@@ -523,6 +540,8 @@ void BattlegroundWS::HandleKillPlayer(Player* player, Player* killer)
         return;
 
     EventPlayerDroppedFlag(player);
+    sScriptMgr->OnBattlegroundObjectiveCaptured(this, GetBgTypeID(), GetInstanceID(), player, BG_WSG_CAPTURE_EVENTS::BG_WSG_TESTEVENT);
+
     Battleground::HandleKillPlayer(player, killer);
 }
 

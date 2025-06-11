@@ -40,6 +40,8 @@ enum AllBattlegroundHook
     ALLBATTLEGROUNDHOOK_ON_BATTLEGROUND_END,
     ALLBATTLEGROUNDHOOK_ON_BATTLEGROUND_DESTROY,
     ALLBATTLEGROUNDHOOK_ON_BATTLEGROUND_CREATE,
+    ALLBATTLEGROUNDHOOK_ON_BATTLEGROUND_OBJECTIVE_CAPTURED,
+    ALLBATTLEGROUNDHOOK_ON_ARENA_END,
     ALLBATTLEGROUNDHOOK_END
 };
 
@@ -132,6 +134,25 @@ public:
      * @param bg Contains information about the Battleground
      */
     virtual void OnBattlegroundCreate(Battleground* /*bg*/) { }
+
+    /**
+     * @brief This hook runs when a Battleground objective is captured
+     *
+     * @param bg Contains information about the Battleground
+     * @param player Contains information about the player who captured the objective
+     * @param eventType Contains information about the type of event that occurred
+     */
+    virtual void OnBattlegroundObjectiveCaptured(Battleground* /*bg*/, Player* /*player*/, uint32 /*eventType*/) {}
+
+    /**
+     * @brief This hook runs when an arena ends
+     *
+     * @param player Contains information about the player who participated in the arena
+     * @param Own_MMRating Contains information about the player's own matchmaker rating
+     * @param Opponent_MMRating Contains information about the opponent's matchmaker rating
+     * @param Won Contains information about whether the player won or lost
+     */
+    virtual void OnArenaGameEnd(Player* /*player*/, uint32 /*Own_MMRating*/, uint32 /*Opponent_MMRating*/, bool /*Won*/) {}
 };
 
 // Compatibility for old scripts

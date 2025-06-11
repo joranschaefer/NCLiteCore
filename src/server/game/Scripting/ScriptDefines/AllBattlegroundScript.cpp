@@ -104,6 +104,16 @@ void ScriptMgr::OnBattlegroundCreate(Battleground* bg)
     CALL_ENABLED_HOOKS(AllBattlegroundScript, ALLBATTLEGROUNDHOOK_ON_BATTLEGROUND_CREATE, script->OnBattlegroundCreate(bg));
 }
 
+void ScriptMgr::OnBattlegroundObjectiveCaptured(Battleground* bg, BattlegroundTypeId bgId, uint32 instanceId, Player* player, uint32 eventType)
+{
+    CALL_ENABLED_HOOKS(AllBattlegroundScript, ALLBATTLEGROUNDHOOK_ON_BATTLEGROUND_OBJECTIVE_CAPTURED, script->OnBattlegroundObjectiveCaptured(bg, player, eventType));
+}
+
+void ScriptMgr::OnArenaGameEnd(Player* player, uint32 Own_MMRating, uint32 Opponent_MMRating, bool Won)
+{
+    CALL_ENABLED_HOOKS(AllBattlegroundScript, ALLBATTLEGROUNDHOOK_ON_ARENA_END, script->OnArenaGameEnd(player, Own_MMRating, Opponent_MMRating, Won));
+}
+
 AllBattlegroundScript::AllBattlegroundScript(char const* name, std::vector<uint16> enabledHooks) :
     ScriptObject(name, ALLBATTLEGROUNDHOOK_END)
 {

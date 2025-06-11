@@ -841,11 +841,16 @@ int32 ArenaTeam::LostAgainst(uint32 Own_MMRating, uint32 Opponent_MMRating, int3
 
 void ArenaTeam::MemberLost(Player* player, uint32 againstMatchmakerRating, int32 MatchmakerRatingChange)
 {
+    Group* group = (player && player->GetGroup()) ? player->GetGroup() : nullptr;
+    uint32 AVGMMR = GetAverageMMR(group);
+
     // Called for each participant of a match after losing
     for (MemberList::iterator itr = Members.begin(); itr != Members.end(); ++itr)
     {
         if (itr->Guid == player->GetGUID())
         {
+            sScriptMgr->OnArenaGameEnd(player, AVGMMR, againstMatchmakerRating, false);
+
             // Update personal rating
             int32 mod = GetRatingMod(itr->PersonalRating, againstMatchmakerRating, false);
             itr->ModifyPersonalRating(player, mod, GetType());
@@ -867,11 +872,16 @@ void ArenaTeam::MemberLost(Player* player, uint32 againstMatchmakerRating, int32
 
 void ArenaTeam::MemberWon(Player* player, uint32 againstMatchmakerRating, int32 MatchmakerRatingChange)
 {
+    Group* group = (player && player->GetGroup()) ? player->GetGroup() : nullptr;
+    uint32 AVGMMR = GetAverageMMR(group);
+
     // called for each participant after winning a match
     for (MemberList::iterator itr = Members.begin(); itr != Members.end(); ++itr)
     {
         if (itr->Guid == player->GetGUID())
         {
+            sScriptMgr->OnArenaGameEnd(player, AVGMMR, againstMatchmakerRating);
+
             // update personal rating
             int32 mod = GetRatingMod(itr->PersonalRating, againstMatchmakerRating, true);
             sScriptMgr->OnBeforeUpdatingPersonalRating(mod, GetType());

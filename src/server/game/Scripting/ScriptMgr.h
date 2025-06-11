@@ -625,6 +625,7 @@ public: /* BGScript */
     void OnBattlegroundEnd(Battleground* bg, TeamId winnerTeamId);
     void OnBattlegroundDestroy(Battleground* bg);
     void OnBattlegroundCreate(Battleground* bg);
+    void OnBattlegroundObjectiveCaptured(Battleground* bg, BattlegroundTypeId bgId, uint32 instanceId, Player* player, uint32 eventType);
 
 public: /* Arena Team Script */
     void OnGetSlotByType(const uint32 type, uint8& slot);
@@ -632,6 +633,7 @@ public: /* Arena Team Script */
     void OnArenaTypeIDToQueueID(const BattlegroundTypeId bgTypeId, const uint8 arenaType, uint32& queueTypeID);
     void OnArenaQueueIdToArenaType(const BattlegroundQueueTypeId bgQueueTypeId, uint8& ArenaType);
     void OnSetArenaMaxPlayersPerTeam(const uint8 arenaType, uint32& maxPlayerPerTeam);
+    void OnArenaGameEnd(Player* player, uint32 Own_MMRating, uint32 Opponent_MMRating, bool Won = true);
 
 public: /* SpellSC */
     void OnCalcMaxDuration(Aura const* aura, int32& maxDuration);
