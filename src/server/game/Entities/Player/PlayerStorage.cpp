@@ -2746,6 +2746,7 @@ Item* Player::EquipItem(uint16 pos, Item* pItem, bool update)
             uint8 requiredRank = pProto->RequiredBattleRank;
             if (requiredRank > GetBattleRank())
             {
+                printf("STORAGE: Player::EquipItem failed, item = %u, required rank = %u, player rank = %u\n", pItem->GetEntry(), requiredRank, GetBattleRank());
                 SendEquipError(EQUIP_ERR_ITEM_CANT_BE_EQUIPPED, pItem);
                 return nullptr;
             }
@@ -2844,6 +2845,16 @@ void Player::QuickEquipItem(uint16 pos, Item* pItem)
 {
     if (pItem)
     {
+        // NC Custom: Check required Battle Rank
+        ItemTemplate const* pProto = pItem->GetTemplate();
+        uint8 requiredRank = pProto->RequiredBattleRank;
+        if (requiredRank > GetBattleRank())
+        {
+            printf("STORAGE: Player::QuickEquipItem failed, item = %u, required rank = %u, player rank = %u\n", pItem->GetEntry(), requiredRank, GetBattleRank());
+            SendEquipError(EQUIP_ERR_ITEM_CANT_BE_EQUIPPED, pItem);
+            return;
+        }
+
         AddEnchantmentDurations(pItem);
         AddItemDurations(pItem);
 
@@ -3556,6 +3567,17 @@ void Player::SwapItem(uint16 src, uint16 dst)
         return;
 
     LOG_DEBUG("entities.player.items", "STORAGE: SwapItem bag = {}, slot = {}, item = {}", dstbag, dstslot, pSrcItem->GetEntry());
+
+    ItemTemplate const* pProto = pSrcItem->GetTemplate();
+
+    // NC Custom: Check required Battle Rank
+    uint8 requiredRank = pProto->RequiredBattleRank;
+    if (requiredRank > GetBattleRank())
+    {
+        printf("STORAGE: Player::SwapItem failed, item = %u, required rank = %u, player rank = %u\n", pSrcItem->GetEntry(), requiredRank, GetBattleRank());
+        SendEquipError(EQUIP_ERR_ITEM_CANT_BE_EQUIPPED, pSrcItem);
+        return;
+    }
 
     if (!IsAlive())
     {

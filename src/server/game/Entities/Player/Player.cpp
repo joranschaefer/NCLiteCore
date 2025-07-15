@@ -2429,8 +2429,8 @@ void Player::GiveXP(uint32 xp, Unit* victim, float group_rate, bool isLFGReward)
         return;
     }
 
-    SendLogXPGain(xp, victim, bonus_xp, recruitAFriend, group_rate);
-    SetProgressPoints(m_progressPoints);
+    //SendLogXPGain(xp, victim, bonus_xp, recruitAFriend, group_rate);
+    //SetProgressPoints(m_progressPoints);
 }
 
 // Update player to next level
@@ -6233,7 +6233,8 @@ bool Player::RewardHonor(Unit* uVictim, uint32 groupsize, int32 honor, bool awar
             {
                 uint32 xp = uint32(honor * (3 + GetLevel() * 0.30f));
                 sScriptMgr->OnPlayerGiveXP(this, xp, nullptr, PlayerXPSource::XPSOURCE_BATTLEGROUND);
-                GiveXP(xp, nullptr);
+                //GiveXP(xp, nullptr);
+                SetProgressPoints(GetProgressPoints() + xp);
             }
         }
 

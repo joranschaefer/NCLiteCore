@@ -64,7 +64,7 @@ void WorldSession::HandleSplitItemOpcode(WorldPacket& recvData)
 
 void WorldSession::HandleSwapInvItemOpcode(WorldPacket& recvData)
 {
-    //LOG_DEBUG("network.opcode", "WORLD: CMSG_SWAP_INV_ITEM");
+    LOG_DEBUG("network.opcode", "WORLD: CMSG_SWAP_INV_ITEM");
     uint8 srcslot, dstslot;
 
     recvData >> dstslot >> srcslot;
@@ -124,7 +124,7 @@ void WorldSession::HandleAutoEquipItemSlotOpcode(WorldPacket& recvData)
 
 void WorldSession::HandleSwapItem(WorldPacket& recvData)
 {
-    //LOG_DEBUG("network.opcode", "WORLD: CMSG_SWAP_ITEM");
+    LOG_DEBUG("network.opcode", "WORLD: CMSG_SWAP_ITEM");
     uint8 dstbag, dstslot, srcbag, srcslot;
 
     recvData >> dstbag >> dstslot >> srcbag >> srcslot;
@@ -150,13 +150,11 @@ void WorldSession::HandleSwapItem(WorldPacket& recvData)
 
     if (_player->IsBankPos(srcbag, srcslot) && !CanUseBank())
     {
-        //LOG_DEBUG("network", "WORLD: HandleSwapItem - Unit ({}) not found or you can't interact with him.", m_currentBankerGUID.ToString());
         return;
     }
 
     if (_player->IsBankPos(dstbag, dstslot) && !CanUseBank())
     {
-        //LOG_DEBUG("network", "WORLD: HandleSwapItem - Unit ({}) not found or you can't interact with him.", m_currentBankerGUID.ToString());
         return;
     }
 
@@ -165,7 +163,7 @@ void WorldSession::HandleSwapItem(WorldPacket& recvData)
 
 void WorldSession::HandleAutoEquipItemOpcode(WorldPacket& recvData)
 {
-    //LOG_DEBUG("network.opcode", "WORLD: CMSG_AUTOEQUIP_ITEM");
+    LOG_DEBUG("network.opcode", "WORLD: CMSG_AUTOEQUIP_ITEM");
     uint8 srcbag, srcslot;
 
     recvData >> srcbag >> srcslot;
@@ -178,16 +176,6 @@ void WorldSession::HandleAutoEquipItemOpcode(WorldPacket& recvData)
     if (!pProto)
     {
         _player->SendEquipError(pSrcItem->IsBag() ? EQUIP_ERR_ITEM_NOT_FOUND : EQUIP_ERR_ITEMS_CANT_BE_SWAPPED, pSrcItem);
-        return;
-    }
-
-    // NC Customs: Check required rank
-    uint8 requiredRank = pProto->RequiredBattleRank;
-    uint8 playerRank = _player->GetBattleRank();
-
-    if (requiredRank > 0 && playerRank < requiredRank)
-    {
-        _player->SendEquipError(EQUIP_ERR_ITEM_CANT_BE_EQUIPPED, pSrcItem);
         return;
     }
 
