@@ -100,3 +100,5 @@ local.properties
 # ==================
 .cache
 compile_commands.json
+
+!modules/eluna

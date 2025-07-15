@@ -179,6 +179,16 @@ void WorldSession::HandleAutoEquipItemOpcode(WorldPacket& recvData)
         return;
     }
 
+    // NC Customs: check required rank
+    uint8 requiredRank = pProto->RequiredBattleRank;
+    uint8 playerRank = _player->GetBattleRank();
+
+    if (requiredRank > 0 && playerRank < requiredRank)
+    {
+        _player->SendEquipError(EQUIP_ERR_ITEM_CANT_BE_EQUIPPED, pSrcItem);
+        return;
+    }
+
     uint8 eslot = _player->FindEquipSlot(pProto, NULL_SLOT, !pSrcItem->IsBag());
     if (eslot == NULL_SLOT)
     {
@@ -1098,8 +1108,8 @@ void WorldSession::SendListInventory(ObjectGuid vendorGuid, uint32 vendorEntry)
     vendor->SetHomePosition(vendor->GetPosition());
 
     SetCurrentVendor(vendorEntry);
-
     VendorItemData const* items = vendorEntry ? sObjectMgr->GetNpcVendorItemList(vendorEntry) : vendor->GetVendorItems();
+    
     if (!items)
     {
         WorldPacket data(SMSG_LIST_INVENTORY, 8 + 1 + 1);

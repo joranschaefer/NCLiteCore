@@ -597,6 +597,7 @@ enum PlayerExtraFlags
     PLAYER_EXTRA_SPECTATOR_ON       = 0x0080,               // Marks if player is spectactor
     PLAYER_EXTRA_PVP_DEATH          = 0x0100,               // store PvP death status until corpse creating.
     PLAYER_EXTRA_SHOW_DK_PET        = 0x0400,               // Marks if player should see ghoul on login screen
+    PLAYER_EXTRA_GM_SPECTATOR       = 0x0800,
 };
 
 // 2^n values
@@ -1167,6 +1168,9 @@ public:
     void SetGameMaster(bool on);
     [[nodiscard]] bool isGMChat() const { return m_ExtraFlags & PLAYER_EXTRA_GM_CHAT; }
     void SetGMChat(bool on) { if (on) m_ExtraFlags |= PLAYER_EXTRA_GM_CHAT; else m_ExtraFlags &= ~PLAYER_EXTRA_GM_CHAT; }
+    [[nodiscard]] bool IsGMSpectator() const { return m_ExtraFlags & PLAYER_EXTRA_GM_SPECTATOR; }
+    void SetGMSpectator(bool on) { if (on) m_ExtraFlags |= PLAYER_EXTRA_GM_SPECTATOR; else m_ExtraFlags &= ~PLAYER_EXTRA_GM_SPECTATOR; }
+
     [[nodiscard]] bool isTaxiCheater() const { return m_ExtraFlags & PLAYER_EXTRA_TAXICHEAT; }
     void SetTaxiCheater(bool on) { if (on) m_ExtraFlags |= PLAYER_EXTRA_TAXICHEAT; else m_ExtraFlags &= ~PLAYER_EXTRA_TAXICHEAT; }
     [[nodiscard]] bool isGMVisible() const { return !(m_ExtraFlags & PLAYER_EXTRA_GM_INVISIBLE); }
@@ -3026,14 +3030,14 @@ private:
         uint32 m_xpCap;
         uint8 GetPrestige() { return m_prestige; }
         void SetPrestige(uint8 prestige);
-        void SetPrestigePlayerFrame(uint32 entry);
+        void UpdatePrestigeVisuals();
         uint8 GetBattleRank() const { return m_battleRank; }
         void SetBattleRank(uint8 rank);
         uint32 GetProgressPoints() { return m_progressPoints; }
         void SetProgressPoints(uint32 points);
         uint32 GetProgressPointCap() { return m_progressPointCap; }
         static std::vector<uint32> ProgressPointCaps;
-
+        
         int GetPremiumDays() { return m_premiumDays; }
         void SetPremiumDays(int32 days) { m_premiumDays = days; }
         bool IsPremium() { return m_premiumDays > 0; }

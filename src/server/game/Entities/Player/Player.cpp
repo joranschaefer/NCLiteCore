@@ -399,7 +399,6 @@ Player::Player(WorldSession* session): Unit(true), m_mover(this)
     m_progressPoints = 0;
     m_premiumDays = 0;
 
-    // Ours
     m_NeedToSaveGlyphs = false;
     m_MountBlockId = 0;
     m_realDodge = 0.0f;
@@ -804,8 +803,8 @@ uint32 Player::EnvironmentalDamage(EnviromentalDamage type, uint32 damage)
         if (type == DAMAGE_FALL)                               // DealDamage not apply item durability loss at self damage
         {
             LOG_DEBUG("entities.player", "Player::EnvironmentalDamage: Player '{}' ({}) fall to death, losing {} durability",
-                GetName(), GetGUID().ToString(), sWorld->getRate(RATE_DURABILITY_LOSS_ON_DEATH));
-            DurabilityLossAll(sWorld->getRate(RATE_DURABILITY_LOSS_ON_DEATH), false);
+                GetName(), GetGUID().ToString(), sWorld->getRate(RATE_DURABILITY_LOSS_ON_DEATH) / 100.0f);
+            DurabilityLossAll(sWorld->getRate(RATE_DURABILITY_LOSS_ON_DEATH) / 100.0f, false);
             // durability lost message
             SendDurabilityLoss();
         }
@@ -2385,52 +2384,52 @@ void Player::SendLogXPGain(uint32 GivenXP, Unit* victim, uint32 BonusXP, bool re
 void Player::GiveXP(uint32 xp, Unit* victim, float group_rate, bool isLFGReward)
 {
     if (xp < 1)
-    {
         return;
-    }
 
     if (!IsAlive() && !GetBattlegroundId() && !isLFGReward)
-    {
         return;
-    }
 
     if (HasPlayerFlag(PLAYER_FLAGS_NO_XP_GAIN))
-    {
         return;
-    }
 
     if (victim && victim->IsCreature() && !victim->ToCreature()->hasLootRecipient())
-    {
         return;
-    }
 
     // Favored experience increase START
+    // ❌ No longer relevant, since we're not using player levels
+    // uint8 level = GetLevel();
+
+    // Optional: Progression-specific XP zone multiplier
     uint32 zone = GetZoneId();
-    float favored_exp_mult = 0;
-    if ((zone == AREA_HELLFIRE_PENINSULA || zone == AREA_HELLFIRE_RAMPARTS || zone == AREA_MAGTHERIDONS_LAIR || zone == AREA_THE_BLOOD_FURNACE || zone == AREA_THE_SHATTERED_HALLS) && HasAnyAuras(32096 /*Thrallmar's Favor*/, 32098 /*Honor Hold's Favor*/))
-        favored_exp_mult = 0.05f; // Thrallmar's Favor and Honor Hold's Favor
+    float favored_exp_mult = 0.0f;
+    if ((zone == AREA_HELLFIRE_PENINSULA || zone == AREA_HELLFIRE_RAMPARTS || zone == AREA_MAGTHERIDONS_LAIR || zone == AREA_THE_BLOOD_FURNACE || zone == AREA_THE_SHATTERED_HALLS) &&
+        HasAnyAuras(32096 /*Thrallmar's Favor*/, 32098 /*Honor Hold's Favor*/))
+    {
+        favored_exp_mult = 0.05f;
+    }
 
     xp = uint32(xp * (1 + favored_exp_mult));
     // Favored experience increase END
 
+
+    // RaF/rested XP handling (optional, keep if you want bonus points)
     uint32 bonus_xp = 0;
     bool recruitAFriend = GetsRecruitAFriendBonus(true);
-
-    // RaF does NOT stack with rested experience
     if (recruitAFriend)
-        bonus_xp = 2 * xp; // xp + bonus_xp must add up to 3 * xp for RaF; calculation for quests done client-side
+        bonus_xp = 2 * xp;
     else
-        bonus_xp = victim ? GetXPRestBonus(xp) : 0; // XP resting bonus
+        bonus_xp = victim ? GetXPRestBonus(xp) : 0;
 
-    // hooks and multipliers can modify the xp with a zero or negative value
-    // check again before sending invalid xp to the client
-    if (xp < 1)
-    {
+    if (xp + bonus_xp < 1)
         return;
-    }
 
     //SendLogXPGain(xp, victim, bonus_xp, recruitAFriend, group_rate);
     //SetProgressPoints(m_progressPoints);
+    // Optional: Show XP gain in combat log
+    SendLogXPGain(xp, victim, bonus_xp, recruitAFriend, group_rate);
+
+    // ✅ Custom progression logic here
+    SetProgressPoints(m_progressPoints + xp + bonus_xp);
 }
 
 // Update player to next level
@@ -2586,6 +2585,9 @@ void Player::InitStatsForLevel(bool reapplyMods)
         SetUInt32Value(PLAYER_FIELD_MAX_LEVEL, 61);
 
     m_xpCap = sObjectMgr->GetXPForLevel(GetLevel());
+
+    // uint32 maxPlayerLevel = sWorld->getIntConfig(CONFIG_MAX_PLAYER_LEVEL);
+    // sScriptMgr->OnPlayerSetMaxLevel(this, maxPlayerLevel);
 
     // reset before any aura state sources (health set/aura apply)
     SetUInt32Value(UNIT_FIELD_AURASTATE, 0);
@@ -7181,8 +7183,7 @@ void Player::ApplyEquipSpell(SpellInfo const* spellInfo, Item* item, bool apply,
 
         LOG_DEBUG("entities.player", "WORLD: cast {} Equip spellId - {}", (item ? "item" : "itemset"), spellInfo->Id);
 
-        //Ignore spellInfo->DurationEntry, cast with -1 duration
-        CastCustomSpell(spellInfo->Id, SPELLVALUE_AURA_DURATION, -1, this, true, item);
+        CastSpell(this, spellInfo, true, item);
     }
     else
     {
@@ -10008,7 +10009,17 @@ void Player::RemoveSpellMods(Spell* spell)
                             continue;
                         }
             }
-
+            // ROGUE MUTILATE WITH COLD BLOOD
+            if (spellInfo->Id == 5374)
+            {
+                SpellInfo const* sp = mod->ownerAura->GetSpellInfo();
+                if (sp->Id == 14177) // Cold Blood
+                {
+                    mod->charges = 1;
+                    continue;
+                }
+            }
+            
             if (mod->ownerAura->DropCharge(AURA_REMOVE_BY_EXPIRE))
                 itr = m_spellMods[i].begin();
         }
@@ -13642,7 +13653,11 @@ void Player::_LoadSkills(PreparedQueryResult result)
             SkillRaceClassInfoEntry const* rcEntry = GetSkillRaceClassInfo(skill, getRace(), getClass());
             if (!rcEntry)
             {
-                LOG_ERROR("entities.player", "Character {} has skill {} that does not exist.", GetGUID().ToString(), skill);
+                LOG_ERROR("entities.player", "Player {} (GUID: {}), has skill ({}) that is invalid for the race/class combination (Race: {}, Class: {}). Will be deleted.",
+                    GetName(), GetGUID().GetCounter(), skill, getRace(), getClass());
+
+                // Mark skill for deletion in the database
+                mSkillStatus.insert(SkillStatusMap::value_type(skill, SkillStatusData(0, SKILL_DELETED)));
                 continue;
             }
 
@@ -13663,7 +13678,8 @@ void Player::_LoadSkills(PreparedQueryResult result)
 
             if (value == 0)
             {
-                LOG_ERROR("entities.player", "Character {} has skill {} with value 0. Will be deleted.", GetGUID().ToString(), skill);
+                LOG_ERROR("entities.player", "Player {} (GUID: {}), has skill ({}) with value 0. Will be deleted.",
+                    GetName(), GetGUID().GetCounter(), skill);
 
                 CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_CHARACTER_SKILL);
 
@@ -16336,13 +16352,20 @@ void Player::SetPrestige(uint8 prestige)
 {
     uint8 oldPrestige = m_prestige;
     m_prestige = prestige;
+    UpdatePrestigeVisuals();
     sScriptMgr->OnPlayerPrestigeChanged(this, oldPrestige);
 }
 
-void Player::SetPrestigePlayerFrame(uint32 entry)
+void Player::UpdatePrestigeVisuals()
 {
-    SetUInt32Value(OBJECT_FIELD_ENTRY, entry);
-    return;
+    if (m_prestige == 1)
+    {
+        SetUInt32Value(OBJECT_FIELD_ENTRY, 5826); // ID of Geolord Mottle, rare mob
+    }
+    else if (m_prestige == 2)
+    {
+        SetUInt32Value(OBJECT_FIELD_ENTRY, 5048); // ID of Deviate Adder, elite mob
+    }
 }
 
 void Player::SetProgressPoints(uint32 points)
