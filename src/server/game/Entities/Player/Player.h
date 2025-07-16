@@ -3029,7 +3029,7 @@ private:
         uint32 m_xpCap;
         uint8 GetPrestige() { return m_prestige; }
         void SetPrestige(uint8 prestige);
-        void UpdatePrestigeVisuals();
+        void SetPrestigePlayerFrame(uint32 entry);
         uint8 GetBattleRank() const { return m_battleRank; }
         void SetBattleRank(uint8 rank);
         uint32 GetProgressPoints() { return m_progressPoints; }
