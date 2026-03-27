@@ -16,6 +16,7 @@
  */
 
 #include "Common.h"
+#include "Chat.h"
 #include "Item.h"
 #include "Log.h"
 #include "ObjectAccessor.h"
@@ -162,6 +163,16 @@ void WorldSession::HandleAutoEquipItemOpcode(WorldPackets::Item::AutoEquipItem& 
     if (!pProto)
     {
         _player->SendEquipError(pSrcItem->IsBag() ? EQUIP_ERR_ITEM_NOT_FOUND : EQUIP_ERR_ITEMS_CANT_BE_SWAPPED, pSrcItem);
+        return;
+    }
+
+    // NC Customs: check required rank
+    uint8 requiredRank = pProto->RequiredBattleRank;
+    uint8 playerRank = _player->GetBattleRank();
+
+    if (requiredRank > 0 && playerRank < requiredRank)
+    {
+        _player->SendEquipError(EQUIP_ERR_ITEM_CANT_BE_EQUIPPED, pSrcItem);
         return;
     }
 
@@ -647,6 +658,9 @@ void WorldSession::HandleSellItemOpcode(WorldPackets::Item::SellItem& packet)
             }
         }
 
+        if (!sScriptMgr->OnItemSell(_player, pItem->GetEntry()))
+			return;
+
         ItemTemplate const* pProto = pItem->GetTemplate();
         if (pProto)
         {
@@ -827,6 +841,9 @@ void WorldSession::HandleBuyItemInSlotOpcode(WorldPackets::Item::BuyItemInSlot& 
     if (bag == NULL_BAG)
         return;
 
+    if (!sScriptMgr->OnItemBuy(_player, packet.Item))
+        return;
+
     GetPlayer()->BuyItemFromVendorSlot(packet.VendorGuid, packet.Slot, packet.Item, packet.Count, bag, packet.BagSlot);
 }
 
@@ -837,6 +854,25 @@ void WorldSession::HandleBuyItemOpcode(WorldPackets::Item::BuyItem& packet)
         --packet.Slot;
     else
         return; // cheating
+
+    if (!sScriptMgr->OnItemBuy(_player, packet.Item))
+        return;
+
+    if (ItemTemplate const* itemProto = sObjectMgr->GetItemTemplate(packet.Item))
+    {
+        uint8 requiredRank = itemProto->RequiredBattleRank;
+        uint8 playerRank = _player->GetBattleRank();
+
+        if (requiredRank > 0 && playerRank < requiredRank)
+        {
+            WorldPacket data(SMSG_BUY_FAILED, 12);
+            //data << uint64(vendorguid);
+            data << uint32(packet.Item);
+            data << uint8(BUY_ERR_RANK_REQUIRE);
+            SendPacket(&data);
+            return;
+        }
+    }
 
     GetPlayer()->BuyItemFromVendorSlot(packet.VendorGuid, packet.Slot, packet.Item, packet.Count, NULL_BAG, NULL_SLOT);
 }
@@ -881,8 +917,8 @@ void WorldSession::SendListInventory(ObjectGuid vendorGuid, uint32 vendorEntry)
         vendor->SetHomePosition(vendor->GetPosition());
 
     SetCurrentVendor(vendorEntry);
-
     VendorItemData const* items = vendorEntry ? sObjectMgr->GetNpcVendorItemList(vendorEntry) : vendor->GetVendorItems();
+    
     if (!items)
     {
         WorldPacket data(SMSG_LIST_INVENTORY, 8 + 1 + 1);
